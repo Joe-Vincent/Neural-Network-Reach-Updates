@@ -1,0 +1,104 @@
+\subsection{Control Invariant Sets}
+In this subsection we discuss a strategy for computing control invariant sets once we have the PWA representation of a dynamical system $\bx_{t+1} = F(\bx_t, \mathbf{u}_t)$.
+This strategy for computing control invariant sets is implemented in MPT3 specifically for PWA dynamical systems \cite{MPT3}.
+First, we note that for some state transition functions $F$, there may not exist a control invariant set.
+Existence depends on the state domain $\mathcal{X}$ and the set of admissible control inputs $\mathcal{U}$, as well as the effect of control inputs on the state transitions given by $F$.
+If a control invariant set exists, it can be computed via the following recursion which uses backward reachability,
+\begin{subequations}
+\begin{gather}
+    X_0 = \mathcal{X} \\
+    X_{i+1} = \{\bx \mid F(\bx,\mathbf{u}) \in X_{i}, \mathbf{u} \in \mathcal{U} \},
+\end{gather}
+\end{subequations}
+for a compact polyhedral state domain $\mathcal{X}$ and set of admissible inputs $\mathcal{U}$. 
+If $X_{i+1} = X_i$, then $X_i$ is control invariant. 
+
+
+
+
+\subsection{Regions of Attraction}
+% In Section \ref{Sec:Invariant} we gave a general overview of existing results for computing robust control invariant sets of PWA dynamical systems that we can apply to ReLU networks after computing the explicitly defined PWA representation using Algorithm \ref{Algo:cell_enumeration}. 
+In this subsection we consider the problem of computing invariant ROAs given a ReLU network that represents an autonomous dynamical system $\bx_{t+1} = F(\bx_t)$. 
+One of the most common goals in designing a control policy is to stabilize the system around some equilibrium.
+By identifying a ROA, we are identifying a set of states which is stabilized.
+% A common goal in the analysis of nonlinear dynamical systems is to identify the maximal set of states that is both a ROA and an invariant set. 
+% We define a ROA as follows,
+% \begin{definition}[Region of Attraction] \label{def:ROA}
+% A region of attraction (ROA) of an autonomous dynamical system $\bx^+ = f(\bx)$ is a set of states that asymptotically converge to a stable fixed point $\bx_{fp}$. The set of \textit{all} states that asymptotically converge to a stable fixed point is the maximal ROA, i.e. $\text{ROA}_{max} = \{ \bx \mid \lim_{t\rightarrow \infty} f(\bx) = \bx_{fp} \}$. 
+% \end{definition}
+
+% Note that under our definition, a ROA need not be an invariant set (although the maximal ROA is invariant), but since our approach uses seed ROAs that are also invariant sets, as we grow the ROA backwards in time it remains an invariant set. 
+The strategy we use to compute ROAs is as follows.
+We first use RPM to enumerate each affine region of $F$ and within each region check for the existence of a stable fixed point.
+If one is found, we then compute a small `seed ROA' around this equilibrium. 
+Then we use backward reachability to find the $t$-step backward reachable set of the seed ROA, which itself is guaranteed to be an ROA (see \cite{pwa_lygeros}). 
+The volume of the resulting ROA grows as more backward reachability steps are taken. Thus, the maximal ROA is better approximated by using more backward reachability steps.
+
+In the following subsections we detail the procedure for finding fixed points, checking whether they are stable equilibria, and computing seed ROAs. 
+We also describe how the computation of the ROA can be accelerated by exploiting the connected walk of RPM, and under what conditions this accelerated method captures the same result as the original method.
+Finally, as with control invariant sets, there are some dynamical systems for which no ROA exists.
+However, in our outlined procedure, the time taken to find fixed points (if they exist) is a small fraction of the time taken to find the ROA through backward reachability.
+Thus, verifying that no ROA exists can be accomplished with relative ease (compared to verifying that no control invariant set exists, for example).
+% Here we consider computing, via backward reachability, ROAs of ReLU networks that model the discrete-time dynamics of an autonomous system. 
+
+\subsubsection{Finding Fixed Points}
+To find fixed points of a ReLU network we use RPM to solve for the explicit PWA representation and for each region $k$ solve the following system of equations for $\bx$.
+\begin{align}
+    \mathbf{C}_k\bx + \mathbf{d}_k &= \bx \label{eq:fp}
+\end{align}
+We consider $\bx$ a fixed point if it is the unique solution of (\ref{eq:fp}) and lies on the interior of $P_k$. 
+% We do not consider the case of non-unique solutions. 
+A fixed point in $P_k$ is a stable equilibrium if $\mathbf{C}_k$ is a stable dynamics matrix. 
+That is, if the eigenvalues of $\mathbf{C}_k$ have magnitude strictly less than one.
+When all eigenvalues have magnitude strictly less than one, trajectories near the fixed point will asymptotically converge.
+
+\subsubsection{Finding Seed ROAs} \label{seed}
+For our backward reachability algorithm we require a polyhedral seed ROA to start from. Once a stable fixed point is located we translate the corresponding affine system to a linear one via a coordinate transformation. We can then use existing techniques for computing invariant polyhedral ROAs of stable linear systems \cite{hennet1995discrete}. 
+Once a polyhedral ROA is found it can be scaled it up or down to ensure it is a subset of the polyhedron for which the local affine system is valid.
+Then, it is well known that the backward reachable set of an invariant set is also an invariant set \cite{pwa_lygeros}.
+Thus by finding the backward reachable set of the seed ROA, we grow the ROA.
+% To see why this is the case it suffices to show that an invariant set is a subset of its preimage, which can be easily shown via a proof by contradiction.
+% Thus, the preimage of the seed ROA will also be an ROA.
+% In fact, these results extend more generally to robust control invariant sets, however finding seed robust control invariant sets is more challenging.}
+
+\subsection{An Accelerated Procedure} \label{sec:homeo}
+The backward reachability algorithm as previously presented can be made more efficient if RPM is restricted to only enumerated a connected backward reachable set.
+Knowing that the fixed point $\bx_{eq}$ must be in the ROA, initializing RPM at the fixed point, and then only enumerating a connected backward reachable set of the seed ROA can significantly reduce the computation time.
+In this case, we can alter the backward reachability algorithm to only add neighbor polyhedra to the working set if they are neighbors of a polyhedron known to be in the backward reachable set. 
+% When initialized within the connected preimage, this procedure restricts the polyhedra RPM has to enumerate, leading to a substantial reduction in the compute time. 
+
+The resulting set of states found by this procedure still converges to the equilibrium, but since we may not be computing the entire backward reachable set of the seed ROA, it may not be an invariant set.
+Next we consider sufficient conditions for this accelerated procedure to still produce an ROA which is an invariant set.
+
+It is known that the backward reachable set of a connected set will also be connected if the function mapping between the input and output spaces is a homeomorphism.
+\begin{definition}[Homeomorphism] \label{def:homeo}
+A function $f: \mathcal{X} \rightarrow \mathcal{Y}$ between two metric spaces is a homeomorphism if (i) $f$ is bijective, (ii) $f$ is continuous, (iii) $f^{-1}$ is continuous.
+Furthermore, the composition of homeomorphisms is also a homeomorphism.
+\end{definition}
+PWA homeomorphic conditions are given in \cite{homeo2}.
+\begin{theorem}[Homeomorphic PWA Functions \cite{homeo2}]
+For affine maps $\mathbf{C}_k\bx + \mathbf{d}_k$ of regions $P_k \in \mathcal{P}$, let $\mathbf{C}[r]$ denote the matrix consisting of the first $r$ rows and columns of $\mathbf{C}$. If for each $r = 1, \ldots, n$,
+\begin{align}
+   \text{sgn det}(\mathbf{C}_k[r]) = \sigma_r \quad \forall k
+\end{align}
+where $\sigma_r \neq 0$ and sgn det() is the sign of the determinant, then the PWA function is a homeomorphism. 
+% That is, all minor determinants of a given order must have the same sign across all affine map matrices.
+\end{theorem}
+Note that all $\mathbf{C}_k$ nonsingular is a necessary but insufficient condition. 
+This theorem gives us a simple way to check whether a ReLU network is a homeomorphism once we have obtained the explicitly defined PWA function. 
+
+Thus, if the ReLU network defining the dynamical system is a homeomorphism, then restricting RPM to enumerate a connected backward reachable set of the seed ROA results in no loss of generality and the set obtained remains invariant.
+In our examples we explore the effect of this accelerated procedure and show that it can lead to dramatic decreases in computation time.
+The computation time saved is roughly the ratio between the number of polyhedra in the connected backward reachable set and the number of polyhedra over the entire state domain $\mathcal{X}$.
+Depending on the definition of the state domain, this ratio can be quite extreme.
+
+Our method of decomposing ReLU networks into their explicit PWA representations using RPM and checking the homeomorphism condition is, to the best of our knowledge, the first approach for determining the invertibility of an arbitrary ReLU network. 
+% We emphasize that it is not immediately obvious that ReLU networks can be homeomorphisms because, as the authors of \cite{topology} note, the ReLU activation itself is not homeomorphic and layer weight matrices often map between spaces of different dimension. But even though the equation of a ReLU network may not look homeomorphic, the underlying PWA function may still be homeomorphic. 
+This procedure for checking invertibility may find use beyond the problems studied in this paper, like in training normalizing flow models~\cite{papamakarios2021normalizing}.
+
+% \textcolor{black}{Lastly, although the homeomorphic condition may not always hold, we think this accelerated procedure is still worthwhile as it still allows a user to find a set of states which are stabilized (even though whether the set is invariant is unknown).
+% We take this view in Section \ref{Taxinet} where we analyze the stabilizing properties of a learned policy, where the closed-loop PWA dynamics has orders of magnitude many more affine regions than other numerical examples explored in the literature.}
+% Finally, we are not aware of any other work that checks and uses the homeomorphism conditions to accelerate PWA backward reachability, but we have found that utilizing this information can result in significant speedups, as discussed in Section \ref{sec:vanderpol}.
+
+% Somewhat surprisingly, we find the homeomorphic property holds for many of the learned dynamical systems used in Section \ref{Sec:Examples} without special modifications to the training procedure. 
+% Because of this, we think investigation into learning homeomorphic neural networks is a promising direction for future research. 

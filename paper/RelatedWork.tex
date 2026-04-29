@@ -1,0 +1,47 @@
+Though the analysis of neural networks is a young field, a broad literature has emerged to address varied questions related to interpretability, trustworthiness, and safety verification. Much work has been dedicated to characterizing the expressive potential of ReLU networks by studying how the number of affine regions scales with network depth and width \cite{bengio,Hanin_2019,understanding}. Other research includes encoding piecewise-affine (PWA) functions as ReLU networks \cite{fem,reverseengineering}, learning deep signed distance functions and extracting level sets \cite{lei2020analytic}, and learning neural network dynamics or controllers that satisfy stability conditions \cite{zico,jin2020neural}, which may be more broadly grouped with correct-by-construction training approaches \cite{art,lincolnlab}.
+
+Spurred by pioneering methods such as Reluplex \cite{reluplex}, the field of neural network verification has emerged to address the problem of analyzing properties of neural networks over continuous input sets. A survey of the neural network verification literature is given by \cite{survey}. Reachability approaches are a subset of this literature and are especially useful for analysis of learned dynamical systems. 
+
+Reachability methods can be categorized into overapproximate and exact methods. 
+The reachable sets computed by overapproximate methods are guaranteed to capture all reachable states, but may also contain states that are unreachable.
+Overapproximate methods often compute neuron-wise bounds either from interval arithmetic or symbolically \cite{maxsens,fastlip,reluval,neurify,crown, xiang2020reachable}. Optimization based approaches are also used to solve for bounds on a reachable output set in \cite{sherlock,alessio1,alessio2,proveable}. Other approaches include modeling the network as a hybrid system \cite{verisig}, abstracting the domain \cite{abstract}, and performing layer-by-layer operations on zonotopes \cite{AI2}.
+Closed-loop forward reachability using overapproximate methods is investigated in \cite{julian2019reachability, everett, overt, entesari2023automated, meng2022learning, kochdumper2023open}
+Closed-loop backward reachability using overapproximate methods is investigated in \cite{rober2023backward, zhang2023backward}.
+
+Exact reachability methods have also been proposed, although to a lesser degree. 
+These methods either iteratively refine the reachable set by applying layer-by-layer transformations \cite{xiang2017reachable,nnv,yang2020reachability}, or they solve for the explicit PWA representation and compute reachable sets from this \cite{nnenum, VincentSchwagerICRA21RPM}.
+Similar layer-by-layer approaches have also been proposed to solve for the explicit PWA representation of a ReLU network \cite{robinson2020dissecting, hanin2019complexity, xu2022traversing}.
+
+Our RPM algorithm is an exact method, meaning that there is no conservatism in the reachable sets computed by our algorithm.
+Our algorithm inherits all the advantages of exact methods, but is unique in that it enumerates the reachable set in an incremental and connected walk.
+This makes our high-level procedure similar to explicit model predictive control methods \cite{eMPC_book}. 
+% One nice consequence of the incremental nature is that if our algorithm encounters a region with an unsafe input, it can return that result immediately without computing the entire reachable set. 
+Finally, all intermediate polyhedra and affine map matrices of layer-by-layer methods must be stored in memory until the algorithm terminates, whereas with incremental methods, once a polyhedron-affine map pair is computed it can be sent to external memory and only a binary vector (the neuron activations) needs to be stored to continue the algorithm. 
+This is especially useful because no method has been shown to accurately estimate the number of regions without explicit enumeration.
+Unlike other incremental approaches, ours explores affine regions in a connected walk. As a point of distinction, this allows our algorithm to not only output the PWA representation, but for each affine region also output the neighboring affine regions.
+% The eMPC problem is to explicitly define the PWA function implemented by a parametric linear or quadratic program (which is defined as a model predictive controller for a linear system). Methods to solve this problem also tend to be incremental in nature, determining the PWA representation one region at a time and traversing the input space by exploring neighboring regions.  
+
+In this paper we demonstrate how RPM can be used not only for finite-time reachability, but also for computing control invariant sets and ROAs.
+Computing these sets tends to be much harder than computing finite-time reachable sets, but the associated guarantees hold for all time. 
+Few methods exist for computing invariant sets or ROAs for dynamical systems represented as neural networks, and most that do rely on an optimization-based search of a Lyapunov function. 
+In \cite{ellip_roa}, the authors learn a quadratic Lyapunov function using semidefinite programming that results in an ellipsoidal ROA, a drawback of which is that ellipsoids are not very expressive sets. 
+In contrast, nonconvex ROAs can be computed by \cite{richards2018lyapunov, chen2021learning, dai2021lyapunov}. 
+These methods learn Lyapunov functions for a given dynamical system and verify the Lyapunov conditions either using samples and Lipschitz continuity or mixed integer programming. 
+In \cite{control_inv_changliu}, an optimization and sampling-based approach for synthesizing control invariant sets is given, but as with searching for Lyapunov functions, it may fail in finding a control invariant set when one exists. 
+All of these methods inherit the drawbacks of Lyapunov-style approaches wherein a valid Lyapunov function may not be found when one exists, and certifying the Lyapunov conditions is challenging.
+In contrast to these methods, we explicitly solve for the PWA form of the dynamics, then find invariant sets using reachability methods. 
+A reachability-based approach like ours can be more constructive and reliable than Lyapunov approaches, as we show in our experiments.
+Lastly, a non-Lyapunov method is given in \cite{jouret2023safety}, where the focus is on continuous-time dynamical systems, whereas our focus is on discrete-time.
+
+
+% \cite{ellip_roa,richards2018lyapunov,chen2021learning, dai2021lyapunov,control_inv_changliu,biswas, pwa_lyap, lmi_lyap}. Such methods search for a function parameterized as a deep network such that the function verifies the properties required for a Lyapunov function, leading to conclusions regarding stability, asymptotic convergence, and ROAs. However, these approaches typically only verify these Lyapunov function properties at a finite set of sample points in the state space. Some methods attempt to extend these properties to the whole state space by imposing smoothness properties or leveraging a deep network verification method. Also, finding a Lyapunov function for a system can be challenging, even if one exists. 
+
+For PWA dynamics, there are specialized algorithms for computing ROAs based on convex optimization approaches for computing Lyapunov functions \cite{biswas, pwa_lyap, lmi_lyap, baldi2018reachable}, or reachability approaches \cite{MPT3,pwa_lygeros}. 
+A drawback to the Lyapunov approaches for PWA dynamics is they can be too conservative and the standard approaches require the user to provide an invariant domain, which itself can be very challenging to find. 
+Furthermore, in Section 7.2 of \cite{biswas}, motivating examples are given where a variety of Lyapunov approaches fail to find valid Lyapunov functions for very small PWA systems that are known to be stable. 
+
+In contrast to Lyapunov approaches, the reachability approach requires an initial `seed' set of states that is a ROA and uses backward reachability to grow the size of the ROA.
+Finding a seed ROA can be difficult for general nonlinear systems, but for PWA systems can be easily found due to the dynamics being locally linear.
+Although reachability-based computation of invariant sets has been explored for PWA dynamical systems before \cite{pwa_lygeros}, a novelty in our work is pairing these methods with our RPM algorithm so that they can apply to dynamical systems represented as neural networks.
+Our proposed method for finding ROAs of neural networks follows the backward reachability approach from the literature. 
+In addition, we show that backward reachability may be sped up considerably when restricting RPM to enumerate a connected backward reachable set (a unique feature enabled by the connected walk of the algorithm).

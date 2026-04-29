@@ -1,0 +1,199 @@
+We begin by formalizing a model of a ReLU network, and defining various concepts related to polyhedra, PWA functions, and dynamical systems.
+We then state the main problems we seek to address in this paper.
+\subsection{ReLU Networks} \label{sec:relu_networks}
+An $L$-layer feedforward neural network implements a function $\by = F_{\bTheta}(\bx)$, with the map $F_{\bTheta}: \R^{n} \rightarrow \R^{m}$ defined recursively by the iteration
+\begin{align}
+\label{Eq:NNBasic}
+    \bz_{i} = \sigma_i(\bW_i \bz_{i-1} + \bb_i), \quad i = 1, \ldots, L
+\end{align}
+where $\bz_0 = \bx$ is the input, $\by = \bz_L$ is the output, and $\bz_i$ is the hidden layer output of the network at layer $i$.  The function $\sigma_i(\cdot)$ is the activation function at layer $i$, and $\bW_i\in\R^{l_i \times l_{i-1}}$ and $\bb_i\in\R^{l_i}$ are the weights and biases, respectively, where $l_i$ denotes the number of neurons in layer $i$. We assume $\sigma_{L}(\cdot)$ is an identity map and all hidden layer activations are ReLU,
+\begin{align}
+\label{Eq:ReLU}
+    \sigma_i(\bz^\text{pre}_{i}) = [\max(0,z^\text{pre}_{i1}) \, \cdots \, \max(0,z^\text{pre}_{i l_i})]^\top,
+\end{align}
+where $\bz^\text{pre}_i = [z^\text{pre}_{i1} \, \cdots \, z^\text{pre}_{i l_i}]^\top = \bW_i\bz_{i-1} + \bb_i$ is the pre-activation hidden state at layer $i$. We can rewrite the iteration in (\ref{Eq:NNBasic}) in a homogeneous form
+\begin{align}
+\label{Eq:NNHomogeneous}
+        \begin{bmatrix}
+            \bz_i \\ 
+            1
+        \end{bmatrix}
+            &= \sigma_i\Big(\bTheta_i \begin{bmatrix}
+            \bz_{i-1} \\ 
+            1
+        \end{bmatrix}\Big),
+\end{align}
+where
+\begin{subequations}
+\begin{align}
+\bTheta_i &= 
+        \begin{bmatrix}
+            \bW_i & \bb_i \\
+            \mathbf{0}^\top & 1
+        \end{bmatrix} \quad \text{for} \quad i = 1, \ldots, L-1, \label{Eq:ThetaDef} \\
+\bTheta_L &= 
+    \begin{bmatrix}
+        \bW_L & \bb_L
+    \end{bmatrix}. \label{Eq:ThetaLDef}
+\end{align}
+\end{subequations}
+We define $\bTheta = (\bTheta_1, \ldots, \bTheta_L)$ as the tuple containing all the parameters that define the function $F_{\bTheta}(\cdot)$. 
+
+Given an input $\bx$ to a ReLU network, every hidden neuron has an associated binary \textit{neuron activation} of zero or one, corresponding to whether the preactivation value is nonpositive or positive, respectively.\footnote{This choice is arbitrary. Some works use the opposite convention.} Specifically, the activation for neuron $j$ in layer $i$ is given by
+\begin{align}
+\label{Eq:AP}
+    \lambda_{(ij)}(\bx) &= \begin{cases}
+            1 \quad \text{for} \quad z^\text{pre}_{ij}(\bx) > 0 \\    
+            0 \quad \text{for} \quad z^\text{pre}_{ij}(\bx) \le 0. 
+                        \end{cases}
+\end{align}
+We define the activation pattern at layer $i$ as the binary vector $\blambda_{(i)}(\bx) = [\lambda_{(i1)}(\bx) \, \cdots \, \lambda_{(i l_i)}(\bx)]^\top$ and the activation pattern of the whole network as the tuple $\lambda(\bx) = (\blambda_{(1)}(\bx), \ldots, \blambda_{(L-1)}(\bx))$.  For a network with $N = \sum_{i = 1}^{L-1}l_i$ neurons there are $2^N$ possible combinations of neuron activations, however not all are realizable by the network due to inter-dependencies between neurons from layer to layer, as we will see later in the paper. Empirically, the number of activation patterns achievable by the network is better approximated by $N^{n}$ for input space with dimension $n$  \cite{hanin2019deep}. 
+
+We can write equivalent expressions for the neural network function in terms of the activation pattern.  Define the diagonal activation matrix for layer $i$ as $\bLambda_{(i)}(\bx) = \text{diag}([\blambda_{(i)}(\bx)^\top \, 1]^\top)$, where a $1$ is appended at the end\footnote{Note that the homogeneous form adds a dummy neuron at each layer that is always active, since the last element of the hidden state is $1$ in homogeneous form, and thus always positive.} to match the dimensions of the homogeneous form in (\ref{Eq:NNHomogeneous}). Using the activation matrix, we can write the iteration defining the ReLU network from (\ref{Eq:NNHomogeneous}) as
+\begin{align}
+    \label{Eq:NNActivationDef}
+    \begin{bmatrix}
+    \bz_i\\
+    1
+    \end{bmatrix}
+     = \bLambda_{(i)}(\bx)\bTheta_i\begin{bmatrix} \bz_{i-1}\\
+    1
+    \end{bmatrix}.
+\end{align}
+Finally, the map from input $\bx$ to the hidden layer preactivation $z_{ij}^\text{pre}$ can be written explicitly from the iteration (\ref{Eq:NNActivationDef}) as 
+\begin{align}
+\label{Eq:PreActExplicit}
+    z_{ij}^\text{pre}(\bx) = \boldsymbol{\theta}_{ij}\Big(\prod_{l = 1}^{i-1}\bLambda_{(l)}(\bx)\bTheta_l\Big)\begin{bmatrix} \bx\\
+    1
+    \end{bmatrix},
+\end{align}
+where $\boldsymbol{\theta}_{ij}$ is the $j^{\text{th}}$ row of the matrix $\bTheta_i$. Similarly, the whole neural network function $\by = F_{\bTheta}(\bx)$ can be written explicitly as a map from $\bx$ to $\by$ as
+\begin{align}
+\label{Eq:NNExplicit}
+    \by = \bTheta_L\Big(\prod_{i = 1}^{L-1}\bLambda_{(i)}(\bx)\bTheta_i\Big)\begin{bmatrix} \bx\\
+    1
+    \end{bmatrix}.
+\end{align}
+It is well known that in  (\ref{Eq:NNExplicit}), the output $\by$ is a continuous and PWA function of the input $\bx$ \cite{bengio,Hanin_2019,understanding}.  Next, we mathematically characterize PWA functions and give useful definitions.
+
+\subsection{Polyhedra and PWA Functions}
+\begin{definition}[(Convex) Polyhedron]
+A convex polyhedron is a closed convex set $P \subset \mathbb{R}^n$ defined by a finite collection of $M$ halfspace constraints,
+\[
+P = \{\bx \mid \ba_i^\top \bx \le b_i, \quad i = 1, \ldots, M\},
+\]
+where $\ba_i,\bx \in \R^n$, $b_i \in \R$, and each $(\mathbf{a}_i, b_i)$ pair defines a halfspace constraint. Defining matrix $\mathbf{A} = [\mathbf{a}_1 \, \cdots \, \mathbf{a}_N]^\top$ and vector $\mathbf{b} = [b_1 \, \cdots \, b_N]^\top$, we can equivalently write
+\begin{align*}
+    P = \{\bx \mid \mathbf{Ax} \le \mathbf{b} \}. 
+\end{align*}
+We henceforth refer to convex polyhedra as just polyhedra. 
+\end{definition}
+
+The above representation of a polyhedron is known as the halfspace representation, or H-representation. 
+% One can equivalently represent a polyhedron as the convex hull of a set of points and rays, known as the vertex representation, or V-representation, which we do not use in this paper. 
+Note:
+\begin{itemize}
+\item A polyhedron can be bounded or unbounded.
+\item A polyhedron can occupy a dimension less than the ambient dimension (if $(\mathbf{a}_i, b_i) = \alpha_{ij}(-\mathbf{a}_j, -b_j)$ for some pairs $(i,j)$ and some positive scalars $\alpha_{ij}$).
+\item A polyhedron can be empty ($\nexists \bx$ such that $\mathbf{Ax} \le \mathbf{b}$).
+\item Without loss of generality, the halfspace constraints for a polyhedron can be normalized so that $\|\ba_i\|\in \{0,1\}$ (by dividing the unnormalized parameters $\ba_i$ and $b_i$ by $\|\ba_i\|$), where $\|\cdot\|$ is the $\ell_2$ norm. $\|\ba\| = 0$ represents a degenerate constraint that is trivially satisfied if $b_i \ge 0$.
+\item An H-representation of a polyhedron may have an arbitrary number of redundant constraints, which are constraints that are implied by other constraints. 
+% Removing redundant constraints does not change the polyhedron.
+\end{itemize}
+
+\begin{definition}[Polyhedral Tessellation]\label{def:tessellation}
+A polyhedral tessellation $\mathcal{P} = \{P_1, \ldots, P_N\}$ is a finite set of polyhedra that tessellate a set $\mathcal{X} \subset \mathbb{R}^n$. That is, $\cup_{i = 1}^NP_i = \mathcal{X}$ and $|P_i\cap P_j|_n = 0$, for all $i \not= j$, where $|\cdot|_n$ denotes the $n$-dimensional Euclidean volume of a set (the integral over the set with respect to the Lebesgue measure of dimension $n$). 
+\end{definition}
+
+Intuitively, the polyhedra in a tessellation together cover the set $\mathcal{X}$, and can only intersect with each other at shared faces, edges, vertices, etc. 
+In the remainder of the paper when we refer to shared faces between neighboring polyhedra we mean the $n-1$ dimensional polyhedron given by the set intersection $P_i \cap P_j$.
+
+\begin{definition}[Neighboring Polyhedra]
+Two polyhedra, $P_i$ and $P_j$, are neighbors if their intersection has non-zero Euclidean volume in $n-1$ dimensions, that is, $|P_i \cap P_j|_{n-1} > 0$. 
+\end{definition}
+
+Intuitively, neighboring polyhedra are adjacent to one another in the tessellation, and share a common face. A polyhedral tessellation naturally induces a graph in which each node is a polyhedron and edges exist between neighboring polyhedra.
+
+\begin{definition} [Piecewise Affine (PWA) Function] A PWA function is a function $F_{\text{PWA}}(\bx) : \mathbb{R}^{n} \rightarrow \mathbb{R}^{m}$ that is affine over each polyhdron in a polyhedral tessellation $\mathcal{P}$ of $\mathbb{R}^n$.  Specifically, $F_{\text{PWA}}(\bx)$ is defined as
+\begin{align}
+    F_{\text{PWA}}(\bx) = \mathbf{C}_k \bx + \mathbf{d}_k \ \ \ \forall \bx \in P_k \ \ \ \forall P_k \in \mathcal{P}, \label{eq:PWA}
+\end{align}
+where $\mathbf{C}_k \in \mathbb{R}^{m \times n}$, $\mathbf{d}_k \in \mathbb{R}^{m}$.
+\end{definition}
+
+Note that this requires a collection of tuples $\{(\mathbf{A}_1,\mathbf{b}_1, \mathbf{C}_1, \mathbf{d}_1), \ldots, (\mathbf{A}_N,\mathbf{b}_N, \mathbf{C}_N, \mathbf{d}_N)\}$, where $\mathbf{A}_k, \mathbf{b}_k$ define the polyhedron, and $\mathbf{C}_k, \mathbf{d}_k$ define the affine function over that polyhedron. 
+% Here we consider only \emph{continuous} PWA functions, in which case the parameters are not independent, but must be such that each affine function continuously joins with the affine functions in each neighboring polyhedron.
+We refer to the PWA representation in (\ref{eq:PWA}) as the \textit{explicit} PWA representation, as each affine map and polyhedron is written explicitly without specifying the relationship between them. 
+There also exist other representations, such as the lattice representation \cite{lattice_orig,lattice_irred} and the, so called, canonical representation \cite{canonical, pwa_comp}. 
+% Indeed, a ReLU network is also an example of a PWA representation in which the polyhedra and affine maps are implicitly contained in the neural network weights. 
+
+
+
+\subsection{Dynamical Systems}
+In this paper we are concerned with analyzing dynamical systems represented by ReLU networks.
+Specifically, we consider the situations when the ReLU network represents the state transition function for a controlled (\ref{eq:controlled}) or autonomous (\ref{eq:uncontrolled}) dynamical system,
+\begin{align}
+    \bx_{t+1} &= F_{\bTheta}(\bx_t, \mathbf{u}_t) \label{eq:controlled} \\
+    \bx_{t+1} &= F_{\bTheta}(\bx_t) \label{eq:uncontrolled}.
+\end{align}
+For notational convenience, in the remainder of the paper we drop the $\bTheta$ subscript from $F$.
+We next define key concepts and state the overall problems that we seek to solve.
+
+% Our goal in this paper is to transcribe the ReLU network function $\by = F_{\bTheta}(\bx)$ into its equivalent explicit PWA representation $\by = F_{\text{PWA}}(\bx)$, and then apply tools for PWA reachability analysis. 
+\begin{definition}[$t$-Step Forward Reachable Set]
+    Given an initial set of states $\mathcal{X}$ and a set of admissible control inputs $\mathcal{U}$, a $t$-step forward reachable set can be defined recursively,
+    \begin{gather*}
+    \mathcal{S}_0 = \mathcal{X} \\
+        \mathcal{S}_{t} = \{\bx_{t} \mid \bx_{t} = F(\bx_{t-1}, \mathbf{u}_{t-1}),\\ \forall \bx_{t-1} \in \mathcal{S}_{t-1},\ \forall \mathbf{u}_{t-1} \in \mathcal{U}\}.
+    \end{gather*}
+\end{definition}
+
+\begin{definition}[$t$-Step Backward Reachable Set]
+    Given a final set of states $\mathcal{X}$ and a set of admissible control inputs $\mathcal{U}$, a $t$-step backward reachable set can be defined recursively,
+    \begin{gather*}
+    \mathcal{S}_0 = \mathcal{X} \\
+        \mathcal{S}_{-t} = \{\bx_{-t} \mid \bx_{-t+1} = F(\bx_{-t}, \mathbf{u}_{-t}),\\ \forall \bx_{-t+1} \in \mathcal{S}_{-t+1},\ \forall \mathbf{u}_{-t} \in \mathcal{U}\}.
+    \end{gather*}
+\end{definition}
+
+The ability to compute $t$-step forward and backward reachable sets will later enable us to compute control invariant sets and regions of attraction.
+\begin{definition}[Control Invariant Set]
+    Given a set of admissible control inputs $\mathcal{U}$, a control invariant set is a set of states for which there exists a sequence of control inputs such that the system state remains in the set for all time.
+    If $\mathcal{S}$ is a control invariant set, then 
+    \begin{gather*}
+        \bx_0 \in \mathcal{S} \implies \exists \mathbf{u}_0, \ldots, \mathbf{u}_{t-1} \in \mathcal{U} \text{  s.t.  } \bx_t \in \mathcal{S} \quad \forall t \in \mathbb{N}
+    \end{gather*}
+    where $\bx_t = F(\bx_{t-1}, \mathbf{u}_{t-1})$ and $\mathbb{N}$ is the natural numbers.
+\end{definition}
+
+\begin{definition}[(Invariant) Region of Attraction]
+    Given an autonomous dynamical system $\bx_{t+1} = F(\bx_t)$, an invariant region of attraction (ROA) is a set of states that asymptotically converges to an equilibrium state ($\bx_{\text{eq}}$) and for which sequences of states remain for all time. 
+    If $\mathcal{S}$ is an ROA, then
+    \begin{align*}
+        \bx_0 \in \mathcal{S} &\implies \bx_t \in \mathcal{S} \quad \forall t \in \mathbb{N} \\
+        \bx_0 \in \mathcal{S} &\implies \lim_{t \rightarrow \infty} \bx_t = \bx_{\text{eq}}
+    \end{align*}
+    where $\bx_t = F(\bx_{t-1})$.
+\end{definition}
+
+% \textcolor{black}{
+% Due to the self-referential nature of the invariance properties for control invariant sets and ROAs, these sets tend to be more difficult to compute than forward or backward reachable sets.}
+
+In this paper we seek to solve the following problems.
+\begin{problem}
+Given a ReLU network $\by = F(\bx)$ and a polyhedral input set $\mathcal{X} \subset \mathbb{R}^n$, compute the forward reachable set $\mathcal{Y}$. Similarly, given a polyhedral output set $\mathcal{Y}\subset \mathbb{R}^m$ compute the backward reachable set $\mathcal{X}$.
+\end{problem}
+\begin{problem}
+Given a ReLU network that implements a discrete-time dynamical system $\bx_{t+1} = F(\bx_t)$ and state domain $\mathcal{X}$, identify the existence of stable fixed-point equilibria $\bx_{eq}$ and compute associated ROAs.
+\end{problem}
+\begin{problem}
+Given a ReLU network that implements a discrete-time dynamical system $\bx_{t+1} = F(\bx_t, \mathbf{u}_t)$, a state domain $\mathcal{X}$, and set of admissible inputs $\mathcal{U}$, compute a control invariant set (if one exists).
+\end{problem}
+\begin{problem}
+Given a ReLU network that implements a function $\by = F(\bx)$, determine whether the network is a homeomorphism (bijection with continuous inverse).
+\end{problem}
+In the next section we describe the RPM algorithm for transcribing the ReLU network function $\by = F_{\bTheta}(\bx)$ into its equivalent explicit PWA representation $\by = F_{\text{PWA}}(\bx)$. We then address the solution of the above problems in the subsequent sections.
+
+%Our algorithm transforms a ReLU network into its explicit PWA representation by computing a polyhedral complex, $\mathcal{P} = \{P_1, \ldots, P_k, \ldots, P_N\}$, and associated affine maps $(\mathbf{C}_k, \mathbf{d}_k)$. The forward or backward reachable sets can then be computed separately for each polyhedron-affine map pair (using well-known methods from linear reachability theory), with the union giving the desired result for the full ReLU network. 
+
+% Reachability of non-polyhedral sets can be performed by taking the union of individual polyhedral reachability analyses.

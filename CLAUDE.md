@@ -8,6 +8,8 @@ Implementation of the **Reachable Polyhedral Marching (RPM)** algorithm for exac
 
 Primarily Julia (1.10.4); a few MATLAB scripts use the [MPT3](https://www.mpt3.org/) toolbox (3.2.1) for invariant-set computations that RPM does not perform itself. The `pytorch_.py` / `requirements.txt` venv is only needed to retrain the example networks — analysis runs purely in Julia.
 
+The `paper/` directory holds the LaTeX source of the journal paper (arXiv:2210.08339) that this repo accompanies. Mathematical derivations and notation conventions for the algorithm live there — consult it when the code references results, lemmas, or symbols whose definitions aren't obvious from the source alone.
+
 ## Running
 
 This project has no test suite or build step. The "tests" are the per-example scripts at the repo root, run from the Julia REPL:

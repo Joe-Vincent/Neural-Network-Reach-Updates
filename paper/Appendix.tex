@@ -1,0 +1,442 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsection{Neural Network Verification} \label{ACAS}
+% \textcolor{black}{
+% Although this paper is focused on analyzing closed-loop control theoretic properties of neural networks, we note that the RPM algorithm can also be used to solve neural network verification problems.
+% These problems are typically posed as verifying whether there exists an input that maps to some undesirable set of outputs.
+% A common benchmark for neural network verification is a set of 45 distinct policy networks designed to issue advisory warnings to avoid mid-air collisions for unmanned aircraft. Each network has five inputs, \textcolor{black}{six hidden layers with 50 neurons each,} and five outputs (advisories). Inputs are relative distance, angles, and speeds (see \cite{acas} for more details). }
+
+% The appendix of \cite{reluplex} lists ten safety properties the networks should satisfy. Here we consider Property 3. 
+% This property is satisfied if the network never outputs a ``Clear of Conflict" advisory when the intruder is directly ahead and moving towards the ownship. 
+% We use the backward reachability algorithm to verify whether Property 3 is satisfied. 
+% A nonempty backward reachable set implies that some allowable inputs will map to unsafe outputs and the safety property is not satisfied. 
+% \textcolor{black}{
+% Table \ref{table:verification} shows the results of verifying Property 3 for each of the 45 policy networks. 
+% A comparison is given against other exact reachability methods \cite{yang2020reachability,nnenum}, as well as an exact SMT-based method \cite{marabou}.}
+% Each algorithm was run on a single core. 
+% % We note that a parallelized algorithm is also provided for the face lattice approach \cite{yang2020reachability}, and our RPM algorithm is also amenable to a parallelized implementation. 
+
+% \textcolor{black}{
+% The results in Table \ref{table:verification} show that the Marabou algorithm tends to outperform the reachability-based approaches.
+% This may be due to the reachability-based approaches returning more information (i.e. reachable sets) than Marabou's SMT approach which returns only whether the safety property is satisfied or not.
+% Similarly, we hypothesize that the RPM algorithm tends to be slower than the other reachability algorithms because it outputs not only the PWA representation, but also the graph that defines neighboring affine regions.
+% Table \ref{table:verification} also show the advantage of RPM's incremental enumeration (a feature shared by nnenum) when unsafe inputs exist (as is the case for networks $1,7$, $1,8$, and $1,9$).
+% The Face Lattice and Marabou approaches are not incremental and do not admit early termination when unsafe inputs exist.
+% The number of affine regions that are in the input set specified by Property 3 for each network is given in the table as well.}
+
+% \textcolor{black}{Although the results in this example show RPM is often outperformed in verification tasks, we emphasize that this does not conflict with our stated contributions in which we develop the algorithm to enumerate all affine regions in a connected walk, show how such an algorithm can be used to compute invariant sets, and show how the connected walk can be leveraged to accelerate this computation.}
+
+
+% % our proposed method when verifying network properties that are found to not hold. Our RPM algorithm is anytime, in the sense that once an unsafe input polyhedron is found, the algorithm can terminate without completing the full reachability computation. This is in contrast to all existing exact reachability methods that proceed layer-by-layer through the network.  They must solve the entire backward reachability problem to conclude any verification result, whether safe or unsafe.
+
+% \begingroup
+% \setlength{\tabcolsep}{5pt}
+% \begin{table}
+% \centering
+% \caption{Property 3 Verification Times (s.)}
+%  \begin{tabular}{c c c c c c} 
+%  Network & Affine Regions & RPM & Face Lattice & nnenum & Marabou \\ [0.5ex] 
+%  \hline \\ [-1.5ex]
+%  $N_{1,1}$ & 70,631 & 968.42 & 396.14 & \textbf{55.80} & 355.13 \\ 
+
+%  $N_{1,2}$ & 39,529 & 509.00 & 201.53 & \textbf{31.60} & 33.63 \\ 
+ 
+%  $N_{1,3}$ & 12,274 & 168.31 & 60.04 & \textbf{10.40} & 97.14 \\ 
+
+%  $N_{1,4}$ & 4,275 & 51.48 & 22.04 & 4.20 & \textbf{0.30} \\ 
+
+%  $N_{1,5}$ & 4,744 & 54.06 & 25.49 & 4.70 & \textbf{0.68} \\ 
+
+%  $N_{1,6}$ & 1,266 & 15.32 & 7.46 & 1.90 & \textbf{0.07} \\ 
+
+%  $N_{1,7}$ & 500 & \textbf{0.01} & 3.07 & 1.00 & 0.14 \\ 
+
+%  $N_{1,8}$ & 393 & \textbf{0.01} & 2.59 & 0.90 & 0.15 \\ 
+
+%  $N_{1,9}$ & 290 & \textbf{0.01} & 1.93 & 1.00 & 0.15 \\ 
+
+%  $N_{2,1}$ & 16,179 & 200.89 & 72.62 & 12.90 & \textbf{6.47} \\ 
+
+%  $N_{2,2}$ & 6,861 & 85.63 & 33.14 & \textbf{5.90} & 14.83 \\ 
+ 
+%  $N_{2,3}$ & 10,614 & 131.18 & 46.82 & 8.50 & \textbf{3.47} \\ 
+
+%  $N_{2,4}$ & 345 & 3.78 & 2.27 & 1.20 & \textbf{0.06} \\ 
+
+%  $N_{2,5}$ & 2,456 & 30.79 & 11.76 & 2.80 & \textbf{0.22} \\ 
+
+%  $N_{2,6}$ & 253 & 2.57 & 2.01 & 1.10 & \textbf{0.06} \\ 
+
+%  $N_{2,7}$ & 1,199 & 13.37 & 6.24 & 1.80 & \textbf{0.06} \\ 
+
+%  $N_{2,8}$ & 326 & 3.41 & 2.33 & 1.20 & \textbf{0.13} \\ 
+
+%  $N_{2,9}$ & 188 & 2.01 & 1.56 & 1.10 & \textbf{0.06} \\ 
+
+%  $N_{3,1}$ & 5,967 & 70.79 & 29.05 & 5.20 & \textbf{0.34} \\ 
+
+%  $N_{3,2}$ & 36,967 & 471.75 & 206.33 & 29.10 & \textbf{12.38} \\ 
+ 
+%  $N_{3,3}$ & 7,848 & 93.11 & 39.94 & 7.10 & \textbf{0.81} \\ 
+
+%  $N_{3,4}$ & 2,077 & 24.63 & 10.42 & 2.40 & \textbf{0.27} \\ 
+
+%  $N_{3,5}$ & 1,034 & 12.19 & 5.76 & 1.80 & \textbf{0.17} \\ 
+
+%  $N_{3,6}$ & 1,857 & 22.58 & 10.32 & 2.40 & \textbf{0.25} \\ 
+
+%  $N_{3,7}$ & 107 & 1.18 & 1.11 & 1.00 & \textbf{0.06} \\ 
+
+%  $N_{3,8}$ & 654 & 8.31 & 3.94 & 1.50 & \textbf{0.27} \\ 
+
+%  $N_{3,9}$ & 1,201 & 13.58 & 6.16 & 1.90 & \textbf{0.25} \\ 
+
+%  $N_{4,1}$ & 2,276 & 26.33 & 10.44 & \textbf{2.50} & 10.52 \\ 
+
+%  $N_{4,2}$ & 17,894 & 233.65 & 87.89 & \textbf{14.40} & 30.20 \\ 
+ 
+%  $N_{4,3}$ & 20,746 & 270.22 & 113.29 & ERROR & \textbf{9.82} \\ 
+
+%  $N_{4,4}$ & 560 & 6.77 & 3.61 & 1.30 & \textbf{0.14} \\ 
+
+%  $N_{4,5}$ & 351 & 3.80 & 2.04 & 1.20 & \textbf{0.06} \\ 
+
+%  $N_{4,6}$ & 2,496 & 29.58 & 13.18 & 2.90 & \textbf{0.30} \\ 
+
+%  $N_{4,7}$ & 944 & 9.92 & 5.33 & 1.70 & \textbf{0.33} \\ 
+
+%  $N_{4,8}$ & 576 & 6.67 & 3.66 & 1.40 & \textbf{0.06} \\ 
+
+%  $N_{4,9}$ & 611 & 6.93 & 3.96 & 1.50 & \textbf{0.29} \\ 
+
+%  $N_{5,1}$ & 9,461 & 116.76 & 44.02 & \textbf{8.10} & 26.38 \\ 
+
+%  $N_{5,2}$ & 2,104 & 24.25 & 9.19 & 2.50 & \textbf{0.98} \\ 
+ 
+%  $N_{5,3}$ & 2,874 & 33.93 & 15.53 & 3.00 & \textbf{0.38} \\ 
+
+%  $N_{5,4}$ & 758 & 8.77 & 4.29 & 1.60 & \textbf{0.17} \\ 
+
+%  $N_{5,5}$ & 1,305 & 15.32 & 6.49 & 1.80 & \textbf{0.22} \\ 
+
+%  $N_{5,6}$ & 1,143 & 12.64 & 6.71 & 1.90 & \textbf{0.24} \\ 
+
+%  $N_{5,7}$ & 88 & 0.96 & 1.09 & 1.00 & \textbf{0.06} \\ 
+
+%  $N_{5,8}$ & 2,368 & 0.86 & 12.08 & 2.70 & \textbf{0.24} \\ 
+
+%  $N_{5,9}$ & 107 & 1.11 & 1.04 & 1.00 & \textbf{0.06} \\ 
+
+% \end{tabular}
+% \label{table:verification}
+% \end{table}
+% \endgroup
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Proofs}
+In this section we provide a proof for Theorem \ref{thm: activation_flipping}. 
+Similar arguments are used to characterize the change in Jacobians of PWA components in \cite{pwa_comp} and the references therein.
+\textcolor{black}{We begin with a proof for the first claim of Theorem \ref{thm: activation_flipping} with Lemma \ref{lemma:stationary}.
+We then prove the second claim of Theorem \ref{thm: activation_flipping} with Lemma \ref{lemma:flips}, with additional support from Lemma \ref{lemma:affine}.}
+
+% The general framework for finding the activation pattern associated with $P_{k'}$ is to apply the neuron activation flipping rules layer by layer. Flipping a neuron activation in an early layer may alter neuron hyperplane equations in later layers, which in turn may lead to activation flipping in later layers and so on. Each hidden layer neuron is associated with a hyperplane $\ba_{ij}^\top \bx = b_{ij}$ where $i$ denotes the layer and $j$ denotes the neuron index within its layer. Each of these hyperlanes is used to define a halfspace constraint given the neuron activation. We show that the activation of a Type 3 neuron does not change from $P_k$ to $P_{k'}$. We also show that there are only a few ways the hyperplane equation of a Type 1 or 2 neuron can change from $P_k$ to $P_{k'}$. For each of these cases we can determine the proper sense of the associated halfspace constraint for $P_{k'}$ and thus determine the neuron activation in $P_{k'}$. 
+
+% \begin{lemma}[Neuron Types are Complete]
+% Each neuron in a hidden layer belongs to one and only one of the Type categories.
+% \end{lemma}
+% \begin{proof}
+% Presented without proof.
+% \end{proof}
+
+% \item If $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$, then $[\ba_{k',ij}^\top\quad  -b_{k',ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{-1,0\}$, and the activation $\lambda_{k',ij}$ should be set to ensure this holds.
+\subsubsection{Proving Claim 1 of Theorem \ref{thm: activation_flipping}}
+\begin{lemma}[Stationary Neurons] \label{lemma:stationary}
+If $[\ba_{k,ij}^\top\quad  -b_{k,ij}] \neq \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$, then the activation of neuron $ij$ does not change, $\lambda_{k,ij} = \lambda_{k',ij}$.
+\end{lemma}
+\begin{proof}
+\textcolor{black}{We prove this lemma by showing that, under the conditions of the lemma, the constraint induced by the neuron under its activation in $P_k$ remains valid in $P_{k'}$.}
+
+If $[\ba_{k,ij}^\top\quad  -b_{k,ij}] \neq \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$, then we know that the constraint $\ba_{k,ij}^\top \bx \le  b_{k,ij}$ is not active on the boundary between $P_k$ and $P_{k'}$. Formally, $\forall \bx \in \interior(P_k \cap P_{k'})$
+\begin{align}
+    \ba_{k,ij}^{\top}(\bx) \bx < b_{k,ij}(\bx). \label{eq:App_T3}
+\end{align}
+The inequality must be strict because if the relationship held with equality $\forall \bx \in \interior(P_k \cap P_{k'})$ then we would have $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$ (by definition of the neighbor constraint), leading to a contradiction.
+
+Furthermore, if equality held on a strict subset of $\interior(P_k \cap P_{k'})$, then the shared face of $P_k$ and $P_{k'}$ would not be identified by $\ba_\eta^\top \bx = b_\eta$, but instead by both $\ba_\eta^\top \bx = b_\eta$ and  $\ba_{k,ij}^\top \bx = b_{k,ij}$, another contradiction. 
+
+We now know the constraint is not active due to the strict inequality in (\ref{eq:App_T3}).
+In addition, note that $\ba_{k,ij}^{\top}(\bx) \bx - b_{k,ij}(\bx)$ is a continuous function of $\bx$. 
+From these facts we know $\exists \bm{\delta}$ such that $\bx + \bm{\delta} \in \interior(P_{k'})$ and the inequality remains strict,
+\begin{align}
+    \ba_{k,ij}^{\top}(\bx + \bm{\delta}) (\bx + \bm{\delta}) < b_{k,ij}(\bx + \bm{\delta}). \label{eq:App_T12}
+\end{align}
+Therefore, since the constraint associated with such a neuron $ij$ is valid on the interior of both $P_k$ and $P_{k'}$, the neuron activation does not change.
+
+To finish, we note that the case of $\alpha = -1$ is impossible because it would imply that the dimension of $\text{int}(P_k)$ is less than the ambient dimension (contradicting Definition \ref{def:tessellation}).
+\end{proof}
+
+
+
+
+
+
+
+\subsubsection{Proving Claim 2 of Theorem \ref{thm: activation_flipping}}
+\begin{lemma}[Effects of Activation Flips] \label{lemma:flips}
+If \newline $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$, then $[\ba_{k',ij}^\top\quad  -b_{k',ij}] = \alpha'[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha' \in \{-1,0\}$.
+% Neuron $ij$ (Type 1 or 2) defines a normalized constraint $\ba_{ij}^{\top} \bx \le b_{ij}\ \forall \bx \in P$ where $\ba_{ij} = \alpha\ba_\eta$ for some $\alpha \in \{-1, 0, 1\}$. In addition, $\ba_{ij} = \alpha\ba_\eta \ \forall \bx \in P_{k'}$ for some $\alpha \in \{-1, 0, 1\}$.
+\end{lemma}
+\begin{proof}
+\textcolor{black}{We prove this lemma by first showing that a weaker condition (dependent on $\bx$) holds for all points on the boundary between the regions.
+Then, by analyzing this weaker condition for $n$ carefully chosen points on the boundary, we show that the dependence on $\bx$ can be removed and we arrive at the desired result.}
+
+Consider the affine functions defined by neuron $ij$ in regions $P_k$ and $P_{k'}$,
+\begin{subequations}
+\begin{align}
+    \Bar{\ba}_{k,ij}^\top \bx -\Bar{b}_{k,ij} \quad &\forall \bx \in P_k \\
+    \Bar{\ba}_{k',ij}^\top \bx -\Bar{b}_{k',ij} \quad &\forall \bx \in P_{k'}
+\end{align}
+\end{subequations}
+(note that the overbar accent indicates the parameters are unnormalized as in (\ref{Eq:HalfspaceDef}). Since ReLU networks are continuous functions, $\forall \bx \in P_k \cap P_{k'}$ we know
+\begin{subequations}
+\begin{align}
+    \Bar{\ba}_{k,ij}^\top \bx -\Bar{b}_{k,ij} &= \Bar{\ba}_{k',ij}^\top \bx -\Bar{b}_{k',ij} \\
+    \implies \begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k',ij}^\top} & -\Bar{b}_{k',ij} \end{bmatrix} \begin{bmatrix} \bx \\ 1 \end{bmatrix} &= 
+    \begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k,ij}^\top} & -\Bar{b}_{k,ij} \end{bmatrix} \begin{bmatrix} \bx \\ 1 \end{bmatrix} \\
+    \implies \begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k',ij}^\top} & -\Bar{b}_{k',ij} \end{bmatrix} \begin{bmatrix} \bx \\ 1 \end{bmatrix} &= 
+    \beta \begin{bmatrix}  \multicolumn{2}{c}{\ba_{\eta}^\top} & -b_{\eta} \end{bmatrix} \begin{bmatrix} \bx \\ 1 \end{bmatrix}
+\end{align}
+\end{subequations}
+for some $\beta \ge 0$. Thus, we know the normalized constraint $\ba_{k',ij}^\top \bx \le b_{k',ij}$ must satisfy
+\begin{align}
+    \begin{bmatrix} \multicolumn{2}{c}{\ba_{k',ij}^\top} & -b_{k',ij} \end{bmatrix}  \begin{bmatrix} \bx \\ 1 \end{bmatrix} &=  
+    \alpha' \begin{bmatrix} \ba^\top_\eta & -b_\eta \end{bmatrix} 
+    \begin{bmatrix} \bx \\ 1 \end{bmatrix} \label{eq:x_depend}
+\end{align}
+for some $\alpha' \in \{-1,0,1\}$ and $\forall \bx \in P_k \cap P_{k'}$. We next seek to remove this relationship's dependence on $\bx$.
+
+We know $P_k \cap P_{k'}$ is a subset of the $n-1$-dimensional affine span $\{\bx \mid \ba_\eta^\top \bx = b_\eta \}$. Since $\vert P_k \cap P_{k'} \vert_{n-1} \neq 0$ there exist $\bx_1, \ldots, \bx_{n} \in P_k \cap P_{k'}$ that define the vertex points of an $n-1$-dimensional simplex on $P_k \cap P_{k'}$. The vertices of a simplex are known to be affinely independent. Therefore, by Lemma \ref{lemma:affine}, the vectors
+\begin{align}
+    \begin{bmatrix} \bx_1 \\ 1 \end{bmatrix}, \ldots, \begin{bmatrix} \bx_{n} \\ 1 \end{bmatrix} \in \mathbb{R}^{n+1}
+\end{align}
+are linearly independent. Next, consider the matrix formed by these vectors
+\begin{align}
+    \mathbf{X} = \begin{bmatrix} \bx_1^\top & 1 \\ \vdots & \vdots \\ \bx_{n}^\top & 1 \end{bmatrix} \in \mathbb{R}^{n \times n+1}.
+\end{align}
+From (\ref{eq:x_depend}), and since $\ba_\eta^\top \bx_i - b_\eta = 0 \quad \forall i \in 1,\ldots,n$,
+\begin{subequations}
+\begin{align}
+    \mathbf{X} \begin{bmatrix} \ba_{k',ij} \\ -b_{k',ij} \end{bmatrix}  &= \alpha' \mathbf{X}  \begin{bmatrix} \ba_\eta \\ -b_\eta \end{bmatrix}\\
+    \mathbf{X} \begin{bmatrix} \ba_{k',ij} \\ -b_{k',ij} \end{bmatrix} &= \mathbf{0}.
+\end{align}
+\end{subequations}
+
+By the rank-nullity theorem, nullity$(\mathbf{X}) = 1$ (rank is $n$ by construction and $\mathbf{X} \in \mathbb{R}^{n \times n+1}$). Furthermore, since both $[\ba_{k',ij}^\top \quad -b_{k',ij}]^\top$ and $[\ba_\eta^\top \quad -b_\eta]^\top$ lie in a single-dimensional nullspace, they must be scalar multiples of each other.
+Thus, for some $\alpha' \in \{-1,0,1\}$,
+\begin{subequations}
+    \begin{align}
+    [\ba_{k',ij}^\top \quad -b_{k',ij}]^\top, [\ba_\eta^\top \quad -b_\eta]^\top \in \text{null}(\mathbf{X}) \\
+    \implies [\ba_{k',ij}^\top\quad  -b_{k',ij}] = \alpha'[\ba_\eta^\top\quad -b_\eta].
+\end{align}
+\end{subequations}
+
+Lastly, $\begin{bmatrix} \multicolumn{2}{c}{\ba_{k',ij}^\top} & -b_{k',ij} \end{bmatrix} = \begin{bmatrix} \ba^\top_\eta & -b_\eta \end{bmatrix}$ cannot hold as it leaves $P_{k'}$ lower than the ambient dimension, so $\alpha' \neq 1$. Thus, we arrive at the desired result.
+\end{proof}
+
+
+
+\begin{lemma}[Affine Independence to Linear Independence]\label{lemma:affine}
+Given affinely independent vectors $\bx_1,\ldots,\bx_k \in \mathbb{R}^n$, $[\bx_1^\top \quad 1 ]^\top, \ldots, [ \bx_k^\top \quad 1 ]^\top \in \mathbb{R}^{n+1}$ are linearly independent.
+\end{lemma}
+\begin{proof}
+The vectors $[\bx_1^\top \quad 1 ]^\top, \ldots, [ \bx_k^\top \quad 1 ]^\top$ are linearly independent if and only if
+\begin{subequations}
+\begin{align}
+    \lambda_1\begin{bmatrix} \bx_1 \\ 1 \end{bmatrix} + \lambda_2\begin{bmatrix} \bx_2 \\ 1 \end{bmatrix} + \ldots + \lambda_k\begin{bmatrix} \bx_{k} \\ 1 \end{bmatrix} &= \mathbf{0} \\
+    \implies \lambda_1 = \lambda_2 = \ldots = \lambda_k &= 0.
+\end{align}
+\end{subequations}
+This condition is equivalent to
+\begin{subequations}
+\begin{align}
+    \begin{rcases}
+    \lambda_1 \bx_1 + \lambda_2 \bx_2 + \ldots + \lambda_k \bx_k &= \mathbf{0} \\
+    \lambda_1 + \lambda_2 + \ldots + \lambda_k &= 0
+  \end{rcases} \\
+  \implies \lambda_1 = \lambda_2 = \ldots = \lambda_k &= 0,
+\end{align}
+\end{subequations}
+i.e. $\bx_1,\ldots,\bx_k$ are affinely independent.
+\end{proof}
+
+
+% \begin{lemma}[Number of Affinely Independent Vectors]
+% Given a linear subspace $S$ of dimension $n-1$ and affine hull $S + \bb$ for some $\bb \notin S$, there exists a set of $n$ affinely independent vectors in $S + \bb$. 
+% \end{lemma}
+% \begin{proof}
+% Suppose the vectors
+% \begin{align*}
+%     \bx_1, \ldots, \bx_n
+% \end{align*}
+% are linearly independent.
+
+% Consider the set of affinely independent vectors
+% \begin{align*}
+%     \bx_1, \ldots, \bx_k \in S + \bb
+% \end{align*}
+% where 
+% \begin{align*}
+%     \lambda_1\bx_1 + \ldots + \lambda_k\bx_k = \mathbf{0}.
+% \end{align*}
+% Then
+% \begin{align*}
+%     \lambda_1(\bx_1 - \bb) + \ldots + \lambda_k(\bx_k - \bb) = -(\lambda_1 + \ldots + \lambda_k)\bb.
+% \end{align*}
+% We know $\bx_i - \bb \in S \quad \forall i \in 1,\ldots,k$, but that $\bb \notin S$. So the only way for the above equality to hold is if \begin{align*}
+%     \lambda_1 + \ldots + \lambda_k = 0.
+% \end{align*}
+% Which implies that the set of vectors $\bx_1, \ldots, \bx_k$ is linearly independent in $\mathbb{R}^n$.
+
+% \end{proof}
+
+
+
+
+
+
+
+% In addition, $\forall \bx \in P_k \cap P_{k'}$,
+% \begin{align*}
+%     \ba_\eta^{\top} \bx - b_\eta &= 0 \\
+%     \implies \begin{bmatrix}
+%                 \ba^\top_\eta & -b_\eta 
+%              \end{bmatrix} \begin{bmatrix} \bx \\ 1 \end{bmatrix} &= 0.
+% \end{align*}
+% Thus, $\forall \bx \in P_k \cap P_{k'}$,
+% \begin{align*}
+%     \begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k,ij}^\top - \Bar{\ba}_{k',ij}^\top} & -\Bar{b}_{k,ij} + \Bar{b}_{k',ij} \end{bmatrix}  \begin{bmatrix} \bx \\ 1 \end{bmatrix} =  
+%     \begin{bmatrix} \ba^\top_\eta & -b_\eta \end{bmatrix} 
+%     \begin{bmatrix} \bx \\ 1 \end{bmatrix} \\
+%     \implies \begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k',ij}^\top} & -\Bar{b}_{k',ij} \end{bmatrix}  \begin{bmatrix} \bx \\ 1 \end{bmatrix} =  
+%     (\begin{bmatrix} \multicolumn{2}{c}{\Bar{\ba}_{k,ij}^\top} & -\Bar{b}_{k,ij} \end{bmatrix} -
+%     \begin{bmatrix} \ba^\top_\eta & -b_\eta \end{bmatrix}) 
+%     \begin{bmatrix} \bx \\ 1 \end{bmatrix}.
+% \end{align*}
+% Furthermore, since we assume $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$,
+
+
+
+
+% for a Type 1 or 2 neuron $ij$ in any layer $i$, $\Bar{\ba}_{k',ij} \propto \ba_\eta$ (since we already established that $\Bar{\ba}_{k,ij} \propto \ba_\eta$).
+
+% If $[\Bar{\ba}_{k,ij}^\top\quad  -\Bar{b}_{k,ij}] \propto [\ba_\eta^\top\quad -b_\eta]$, then $[\Bar{\ba}_{k',ij}^\top\quad  -\Bar{b}_{k',ij}] \propto [\ba_\eta^\top\quad -b_\eta]$. Now, when we normalize the hyperlanes as in (REF), we have $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{-1,0,1\}$, then $[\ba_{k',ij}^\top\quad  -b_{k',ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{-1,0,1\}$. Furthermore, we know $P_{k'} \subset \ba_{k',ij}^\top \bx \le  b_{k',ij}$, from which we can conclude the direction of the new constraint must be opposite the direction of the neighbor constraint. This leads to the desired result that if $[\ba_{k,ij}^\top\quad  -b_{k,ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{0,1\}$, then $[\ba_{k',ij}^\top\quad  -b_{k',ij}] = \alpha[\ba_\eta^\top\quad -b_\eta]$ for some $\alpha \in \{-1,0\}$.
+
+
+
+%%
+% Next, if, for Type 1 and 2 neurons in layer $k$, $\ba_{kj}^{c'} \propto \ba_\eta$ then $\ba_{k+1\ j}^{c'} = \ba_{k+1\ j}^{c} + \beta\ba_\eta$ for some scalar $\beta$ and $\ba_{k+1\ j}^{c'} \propto \ba_\eta$ for Type 1 and 2 neurons in layer $k+1$. To see why this is true, we first note the result from Lemma XX that Type 3 neuron activations do not change from $c$ to $c'$. 
+
+% First, consider a Type 1 neuron in the first hidden layer. To define a valid constraint for $c'$ the activation must clearly be flipped but $[\ba_{1j}\ \  -b_{1j}]$ remains unchanged since it is just the $j$th row of $\tilde{\mathbf{W}}_1$ and there are no previous flipping neurons to affect it. Similarly $[\ba_{1j}\ \ -b_{1j}]$ for a Type 2 neuron remains the same and the activation of such a neuron is always $0$.
+
+% Now consider a Type 1 or 2 neuron in the second hidden layer. We know
+% \begin{align}
+%     \begin{bmatrix}
+%         \ba_{2j} & -b_{2j}
+%     \end{bmatrix} =  
+%     \tilde{\mathbf{W}}_2[j,:]  diag(AP_{1})\tilde{\mathbf{W}}_1. \\
+%     \implies
+%     \label{eq:layer2}
+% \end{align}
+% Clearly the row vector $[\ba_{2j}\ \ -b_{2j}]$ is a linear combination of the rows of $diag(AP_{1})\tilde{\mathbf{W}}_1$. To determine the updated hyperplane equation for this neuron we use $AP_1^{c'}$ in (\ref{eq:layer2}) instead of $AP_1^{c}$. Since the only neurons in the first hidden layer to change activation are Type 1 (scalar multiples of $[\ba_{n}\ \ -b_{n}]$), the effect of this is to add a scalar multiple of $[\ba_{n}\ \ -b_{n}]$ to $[\ba_{2j}\ \ -b_{2j}]$ defined for $\bx \in c$. Thus, for a Type 1 neuron in the second hidden layer, $[\ba_{2j}\ \ -b_{2j}]$ defined for $\bx \in c'$ is also a scalar multiple of the neighbor hyperplane. 
+
+% Similarly, the updated $\ba_{2j}$ of a Type 2 constraint will be a scalar multiple of $\ba_\eta$. But the updated $b_{2j}$ of a Type 2 constraint need not be a scalar multiple of $b_\eta$ since $b_{2j}$ defined for $\forall \bx \in c$ may have been positive. 
+
+% It should be clear now that in deeper layers, the update to any $\ba_{ij}$ will be the addition of a scalar multiple of $\ba_\eta$. And since Type 1 and 2 neurons have $\ba_{ij}$ which are already scalar multiples of $\ba_\eta$, their updated quantities remain scalar multiples of $\ba_\eta$. Which, as stated above, implies $\ba_{ij} = \alpha\ba_\eta$ and $\alpha \in \{-1, 0, 1\}$.
+
+
+
+% Given the above lemmas we know that the updated hyperplane equations for Type 1 and 2 neurons satisfy $\ba_{ij} = \alpha\ba_\eta$ for some $\alpha \in \{-1, 0, 1\}$. It also must be the case that either $\tilde{\mathbf{b}}_{ij} \ge \alpha\mathbf{b}_\eta$ or $\tilde{\mathbf{b}}_{ij} < \alpha\mathbf{b}_\eta$. This leaves us with six possible cases for which an updated hyperplane equation could fall into. We now enumerate each case and determine the appropriate halfspace constraint for each, which is used to determine the neuron activation. We first assume the neuron activation from $c$ also holds in $P_{k'}$ and flip the activation if need be. That is, we initially assume $\ba_{ij}^{\top} \bx \le b_{ij}$.
+
+% \begin{lemma}
+% If $\ba_{ij} = \mathbf{0}$ and $b_{ij} \ge 0$, the constraint is valid and the neuron activation is unchanged.
+% \end{lemma}
+% \begin{proof}
+% $\mathbf{0}^{\top} \bx \le b_{ij}$ is always satisfied.
+% \end{proof}
+
+
+% \begin{lemma}
+% If $\ba_{ij} = \mathbf{0}$ and $b_{ij} < 0$, the constraint is invalid and the neuron activation is changed.
+% \end{lemma}
+% \begin{proof}
+% $\mathbf{0}^{\top} \bx \le b_{ij}$ is never satisfied.
+% \end{proof}
+
+% For the following results we recognize that for $\ba_{ij}^{\top} \bx \le b_{ij}$ to be a valid constraint for $c'$, the sets $\{\bx \mid \ba_{ij}^{\top} \bx \le b_{ij} \}$ and $\{\bx \mid \ba_\eta^{\top} \bx \le b_\eta \}$ must intersect in a full dimensional polyhedron that contains the hyperplane $\ba_\eta^{\top} \bx = b_\eta$. Put another way, for $\ba_{ij}^{\top} \bx \le b_{ij}$ to be valid, it must imply that $\ba_\eta^{\top} \bx = b_\eta - s$ holds $\forall s \in [0, u]$ for some $u > 0$. 
+% \begin{lemma}
+% If $\ba_{ij} = \ba_\eta$ and $b_{ij} \ge b_\eta$, the constraint is valid and the neuron activation is unchanged.
+% \end{lemma}
+% \begin{proof}
+% \begin{align*}
+%     \ba_{ij}^{\top} \bx &\le b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\le b_\eta + \delta \text{ (where }b_{ij} = b_\eta + \delta,\ \delta \ge 0) \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta + \delta - \tilde{s},\ \tilde{s} \ge 0 \\
+%     \implies \text{if } s &= \tilde{s} - \delta,\ \text{then }  s \in [0, \infty) \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta - s \text{ holds } \forall s \in [0, \infty)
+% \end{align*}
+% \end{proof}
+
+
+% \begin{lemma}
+% If $\ba_{ij} = \ba_\eta$ and $b_{ij} < b_\eta$, the constraint is invalid and the neuron activation is changed.
+% \end{lemma}
+% \begin{proof}
+% \begin{align*}
+%     \ba_{ij}^{\top} \bx &\le b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\le b_\eta + \delta \text{ (where }b_{ij} = b_\eta + \delta,\ \delta < 0) \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta + \delta - \tilde{s},\ \tilde{s}\ge 0 \\
+%     \implies \text{if } s &= \tilde{s} - \delta,\ \text{then }  s \notin [0, \delta) \\
+%     \implies \nexists u\ s.t.\  \ba_\eta^{\top} \bx &= b_\eta - s \text{ holds } \forall s \in [0, u]
+% \end{align*}
+% \end{proof}
+
+
+% \begin{lemma}
+% If $\ba_{ij} = -\ba_\eta$ and -$b_{ij} < b_\eta$, the constraint is valid and the neuron activation is unchanged.
+% \end{lemma}
+% \begin{proof}
+% \begin{align*}
+%     \ba_{ij}^{\top} \bx &\le b_{ij} \\
+%     \implies -\ba_\eta^{\top} \bx &\le b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\ge -b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\ge b_\eta - \delta \text{ (where }-b_{ij} = b_\eta - \delta,\ \delta > 0) \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta - \delta + \tilde{s},\ \tilde{s}\ge 0 \\
+%     \implies \text{if } s &= -\tilde{s} + \delta,\ \text{then }  s \in [0, \delta] \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta - s \text{ holds } \forall s \in [0, \delta]
+% \end{align*}
+% \end{proof}
+
+
+% \begin{lemma}
+% If $\ba_{ij} = -\ba_\eta$ and -$b_{ij} \ge b_\eta$, the constraint is invalid and the neuron activation is changed.
+% \end{lemma}
+% \begin{proof}
+% \begin{align*}
+%     \ba_{ij}^{\top} \bx &\le b_{ij} \\
+%     \implies -\ba_\eta^{\top} \bx &\le b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\ge -b_{ij} \\
+%     \implies \ba_\eta^{\top} \bx &\ge b_\eta - \delta \text{ (where }-b_{ij} = b_\eta - \delta,\ \delta \le 0) \\
+%     \implies \ba_\eta^{\top} \bx &= b_\eta - \delta + \tilde{s},\ \tilde{s}\ge 0 \\
+%     \implies \text{if } s &= -\tilde{s} + \delta,\ \text{then }  s \notin (0, \infty) \\
+%     \implies \nexists u\ s.t.\  \ba_\eta^{\top} \bx &= b_\eta - s \text{ holds } \forall s \in [0, u]
+% \end{align*}
+% \end{proof}

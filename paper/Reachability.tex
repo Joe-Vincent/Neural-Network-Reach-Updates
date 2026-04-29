@@ -1,0 +1,44 @@
+\subsection{Forward Reachability} \label{Forward}
+The forward reachable set of a PWA function over some input set is simply the union over the forward reachable sets of each polyhedron comprising the input set. The image of a polyhedron under an affine map is
+\begin{align}
+    P_{image} = \{\by \mid \by=\mathbf{Cx}+\mathbf{d},\quad \mathbf{Ax} \le \mathbf{b}\}. \label{eq:forward reach}
+\end{align}
+For invertible $\mathbf{C}$, the H-representation of the image is
+\begin{align}
+    P_{image} = \{\by \mid \mathbf{AC}^{-1}\by \le \mathbf{b} + \mathbf{AC}^{-1} \mathbf{d}\}. \label{eq:image}
+\end{align}
+In the case the affine map is not invertible, more general polyhedral projection methods such as block elimination, Fourier-Motzkin elimination, or parametric linear programming can compute the H-representation of the image \cite{cdd_manual, mpLP}. 
+Our implementation uses the block elimination projection in the case of a non-invertible affine map \cite{cdd}.
+
+Our RPM algorithm is used to perform forward reachability as follows. We first specify a polyhedral input set whose image through the ReLU network we want to compute.  This is a set over which to perform the RPM algorithm. For each activation pattern $\lambda_k$ we also compute the image of $(\bA_k, \bb_k)$ under the map $\by = \mathbf{C}_k\bx + \mathbf{d}_k$. To do this, an additional line is introduced between lines 9 and 10 of Algorithm \ref{Algo:cell_enumeration}
+\begin{align}
+    (\bA_k, \bd_k)_{forward} \leftarrow \text{project}(\bA_k, \bd_k, \mathbf{C}_k, \mathbf{d}_k)
+\end{align}
+where $\text{project}(\bA, \bb, \bC, \bd)$ applies (\ref{eq:image}) if $\mathbf{C}$ invertible and block elimination on (\ref{eq:forward reach}) otherwise.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Backward Reachability} \label{Backward}
+The preimage of a polyhedron under an affine map is
+\begin{subequations}
+    \begin{align}
+        P_{pre} &= \{\bx \mid \by=\mathbf{Cx}+\mathbf{d},\quad \mathbf{Ay} \le \mathbf{b}\} \\
+        &= \{\bx \mid \mathbf{ACx} \le \mathbf{b}-\mathbf{Ad}\}. \label{eq:backward reach}
+    \end{align}
+\end{subequations}
+Like forward reachability, performing backward reachability only requires a small modification to Algorithm \ref{Algo:cell_enumeration}. We first specify a polyhedral output set whose preimage we would like to compute.  For each activation pattern $\lambda_k$, we then compute the intersection of the preimage of the given output set under the map $\mathbf{C}_k\bx + \mathbf{d}_k$ with $P_k$ (the polyhedron for which the affine map is valid). Two additional lines are thus introduced between lines 9 and 10 of Algorithm \ref{Algo:cell_enumeration}
+\begin{subequations}
+    \begin{gather}
+    P_{pre} \leftarrow \text{Equation}\ \ref{eq:backward reach} \label{eq:p_in} \\
+    (\bA_k, \bb_k)_{backward} \leftarrow P_k \cap P_{pre}. \label{eq:h_back}
+    \end{gather}
+\end{subequations}
+Multiple backward reachable sets can be solved for simultaneously at the added cost of repeating (\ref{eq:p_in}) and (\ref{eq:h_back}) for each output set argument to Algorithm \ref{Algo:cell_enumeration}.
+
+Finally, we address the issue of finding $t$-step forward and backward reachable sets for a dynamical system represented as a neural network, $\bx_{t+1} = F(\bx)$.
+For a ReLU network that is applied iteratively over $t$ time steps, $\bx_t = F \circ \cdots \circ F(\bx_0)$.
+Thus, we can concatenate the ReLU network $F$ with itself $t$ times, forming one larger network representing a $t$-step update.
+If the original network $F(\bx)$ has $r$ hidden layer neurons and $N$ layers, the concatenated network has $tr$ neurons and $t(N-1) + 1$ layers.  
+We then simply perform RPM for forward or backward reachability on the concatenated network.
+Thus, computing a $t$-step reachable set is as expensive as computing a $1$-step reachable set for a network with $t$ times the depth.

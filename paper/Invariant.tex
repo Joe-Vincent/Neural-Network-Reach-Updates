@@ -1,0 +1,96 @@
+In this section we discuss a strategy for computing control invariant sets once we have the PWA representation of a dynamical system $\bx_{t+1} = F(\bx_t, \mathbf{u}_t)$.
+First, we note that for some state transition functions $F$, there may not exist a control invariant set.
+Existence of such a set depends on the state domain $\mathcal{X}$ and the set of admissible control inputs $\mathcal{U}$, as well as the specific effect of control inputs on the state transitions given by $F$.
+A common strategy for computing control invariant sets is to compute the following recursion using backward reachability,
+\begin{subequations}
+\begin{gather}
+    X_0 = \mathcal{X} \\
+    X_{i+1} = \{\bx \mid F(\bx,\mathbf{u}) \in X_{i}, \mathbf{u} \in \mathcal{U} \}
+\end{gather}
+\end{subequations}
+for a compact polyhedral state domain $\mathcal{X}$ and set of admissible inputs $\mathcal{U}$. 
+If $X_{i+1} = X_i$, then $X_i$ is a control invariant set. 
+This recursion for computing control invariant sets is implemented in MPT3 specifically for PWA dynamical systems \cite{MPT3}.
+% \textcolor{blue}{In this section we reiterate the main results from \cite{pwa_lygeros} for computing robust control invariant sets of discrete-time PWA dynamical systems.}
+% Given a dynamical system represented as a ReLU network we can use Algorithm \ref{Algo:cell_enumeration} to retrieve the explicitly defined PWA system and then use the following techniques to compute robust control invariant sets.
+% \textcolor{blue}{This approach is the first general framework for computing robust control invariant sets for dynamical systems defined by ReLU networks.}
+% We first define a few useful terms.
+% \begin{definition}[Fixed Point] \label{def:fixed_point}
+% A vector $\bx \in \mathbb{R}^n$ is a fixed point of the function $f(\bx): \mathbb{R}^n \rightarrow \mathbb{R}^n$ if $f(\bx) = \bx$.
+% \end{definition}
+
+% \begin{definition}[Invariant Set] \label{def:invariant}
+% A (forward) invariant set of an autonomous dynamical system $\bx^+ = f(\bx)$ is a set of states for which any trajectory starting in the invariant set remains in the set for all time.
+% \end{definition}
+
+% Building on these definitions, a set of states is robust control invariant if there always exists a control input such that the subsequent state under the dynamics will remain in the set under all possible disturbance values. Computing robust invariant sets for autonomous systems or control invariant sets for deterministic controlled systems are special instances of this general problem. We now summarize the main results from \cite{pwa_lygeros}.
+
+% Suppose we have the  system model
+% \begin{subequations}
+% \begin{align}
+%     \bx^{+} &= f(\bx, \mathbf{u}, \mathbf{w}) \\
+%     (\bx,\mathbf{u}) &\in Y \subset \mathcal{X} \times \mathcal{U} \\
+%     \mathbf{w} &\in W(\bx,\mathbf{u}) \subset \mathcal{W}
+% \end{align}
+% \end{subequations}
+% where $f$ is PWA, $\mathcal{X} = \mathbb{R}^n$, $\mathcal{U} = \mathbb{R}^m$, and $\mathcal{W} = \mathbb{R}^p$. We define the set of admissible state, control, and disturbance triples as
+% \begin{align}
+%     \mathcal{\gamma} = \{(\bx,\mathbf{u},\mathbf{w}) \mid (\bx,\mathbf{u})\in Y,\ \mathbf{w}\in W(\bx,\mathbf{u}) \}.
+% \end{align}
+% It follows that the set of admissible inputs and states are
+% \begin{subequations}
+% \begin{align}
+%     U(\bx) &= \{\mathbf{u} \mid (\bx,\mathbf{u}) \in Y \} \\
+%     X &= \{\bx \mid \exists \mathbf{u}\ \text{s.t.}\ (\bx,\mathbf{u}) \in Y \} = Proj_{\mathcal{X}}(Y).
+% \end{align}
+% \end{subequations}
+% Additionally, let $X_f$ represent a target robust control invariant set. The general strategy is to start with $X_f$ and step backwards in time to compute set of states that lead to $X_f$. We can then iterate upon this until convergence or as long our computational resources allow.
+% \begin{definition}[Predecessor Set]
+% Given a set $\Omega \subset \mathcal{X}$, the predecessor set $Pre(\Omega)$ is the set of states for which there exists an admissible input such that, for all allowable disturbances, the successor state is in $\Omega$, i.e.,
+% \begin{multline}
+%  Pre(\Omega) :=  \\
+%     \scalemath{0.95}{\{\bx \mid \exists \mathbf{u} \in U(\bx)\ s.t.\ f(\bx,\mathbf{u},\mathbf{w}) \in \Omega \ \forall \mathbf{w} \in W(\bx,\mathbf{u}) \}}.
+% \end{multline}
+% \end{definition}
+% Let $X_t$ denote the $t$-step predecessor set to $X_f$. That is,
+% \begin{subequations}
+% \begin{align}
+%     X_0 &= X_f \\
+%     X_{t+1} &= Pre(X_t).
+% \end{align}
+% \end{subequations}
+% A set $S \subset X$ is robust control invariant if for any $\bx\in S$ there exists a $\mathbf{u} \in U(\bx)$ such that $f(\bx,\mathbf{u},\mathbf{w}) \in S$ for all $\mathbf{w} \in W(\bx,\mathbf{u})$. It is known that $X_t$ is robust control invariant for all $t$ if and only if $X_f$ is robust control invariant. Thus, the problem of computing robust control invariant sets involves finding an initial robust control invariant set $X_f$ and then computing predecessor sets $X_t$. For PWA systems it is often advantageous to compute $X_f$ for an affine region of $f$ since computing robust control invariant sets is much easier for affine systems than for nonlinear systems. 
+
+% Next we present the main result of \cite{pwa_lygeros} which leads to Algorithm \ref{Algo:invariant_set} for computing robust control invariant sets. Define the set of robust state and control tuples and the preimage operation as
+% \begin{subequations}
+% \begin{align}
+%     \Sigma &:= \scalemath{0.96}{\{(\bx,\mathbf{u}) \in Y \mid f(\bx,\mathbf{u},\mathbf{w}) \in \Omega \ \forall \mathbf{w} \in W(\bx,\mathbf{u}) \}} \\
+%     \Phi &:= \scalemath{0.96}{f^{-1}(\Omega) = \{(\bx,\mathbf{u},\mathbf{w}) \mid f(\bx,\mathbf{u},\mathbf{w}) \in \Omega \}}.
+% \end{align}
+% \end{subequations}
+% Then the main result from \cite{pwa_lygeros} is
+% \begin{subequations}
+% \begin{align}
+%     Pre(\Omega) &= Proj_{\mathcal{X}}(\Sigma) \\
+%     \Sigma &= Y\ \backslash\ Proj_{\mathcal{X} \times \mathcal{U}}(\mathcal{\gamma}\ \backslash\ \Phi)
+% \end{align}
+% \end{subequations}
+% where $A \backslash B$ is the set difference between sets $A$ and $B$. Algorithm \ref{Algo:invariant_set} outlines the process for computing the $i$-step predecessor set of a seed robust control invariant set $X_0$. If $\mathcal{\gamma}$ and $X_f$ are each a union of polyhedra then each $X_t$ will be a union of polyhedra and $\Phi$ can be computed by adapting the backward reachability algorithm from Section \ref{Sec:Reachability} and standard computational geometry methods can be used to perform the necessary set projections and differences. Algorithm \ref{Algo:invariant_set} is very general and faster algorithms exist for special cases, such as if the disturbance is additive \cite{robust_step}.
+
+% \begin{algorithm}
+% \SetAlgoLined
+% \DontPrintSemicolon
+%  \KwIn{$\mathcal{\gamma}$, $X_0$}
+%  \KwOut{$X_T$}
+%  Compute the projection $Y = Proj_{\mathcal{X} \times \mathcal{U}}(\mathcal{\gamma})$ \\
+%  \For{$t = 1,\ldots,T$}{
+%  Compute the preimage $\Phi_t = f^{-1}(X_{t-1})$ \\
+%  Compute the set difference $\Delta_t = \mathcal{\gamma}\ \backslash \ \Phi_t$ \\
+%  Compute the projection $\Psi_t = Proj_{\mathcal{X} \times \mathcal{U}}(\Delta_t)$ \\
+%  Compute the set difference $\Sigma_t = Y\ \backslash \ \Psi_t$ \\
+%  Compute the projection $X_t = Proj_{\mathcal{X}}(\Sigma_t)$ \\
+%  }
+%  \Return{$X_T$}
+%  \caption{Robust Control Invariant Set \cite{pwa_lygeros}}
+%  \label{Algo:invariant_set}
+% \end{algorithm}

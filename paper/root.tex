@@ -1,0 +1,214 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+                                                          % you want to use the \thanks command
+
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+%In case you encounter the following error:
+%Error 1010 The PDF file may be corrupt (unable to open PDF file) OR
+%Error 1000 An error occurred while parsing a contents stream. Unable to analyze the PDF file.
+%This is a known problem with pdfLaTeX conversion filter. The file cannot be opened with acrobat reader
+%Please use one of the alternatives below to circumvent this error by uncommenting one or the other
+%\pdfobjcompresslevel=0
+%\pdfminorversion=4
+
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+% The following packages can be found on http:\\www.ctan.org
+\usepackage{graphics} % for pdf, bitmapped graphics files
+\usepackage{epsfig} % for postscript graphics files
+% \usepackage{mathptmx} % assumes new font selection scheme installed
+\usepackage{times} % assumes new font selection scheme installed
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetAlgoSkip{}
+\usepackage{hyperref}
+\usepackage{bm}
+\usepackage{gensymb}
+\usepackage{caption}
+\captionsetup[table]{position=bottom}   %% or below
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{svg}
+\usepackage{wrapfig}
+% \usepackage{algorithm,algorithmicx,algpseudocode}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{threeparttable}
+\usepackage{array} % <-- new
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % <-- ne
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{problem}{Problem}
+\DeclareMathOperator{\interior}{int}
+\DeclareMathOperator{\diag}{diag}
+
+%\setlength{\textfloatsep}{5pt}
+%\renewcommand{\baselinestretch}{1}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Ncal}{\mathcal{N}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bW}{\mathbf{W}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\btheta}{\mathbf{\theta}}
+\newcommand{\bTheta}{\mathbf{\Theta}}
+\newcommand{\blambda}{\mathbf{\lambda}}
+\newcommand{\bLambda}{\mathbf{\Lambda}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bd}{\mathbf{d}}
+\newcommand{\bdelta}{\mathbf{\delta}}
+\newcommand\scalemath[2]{\scalebox{#1}{\mbox{\ensuremath{\displaystyle #2}}}}
+
+\newenvironment{rcases}
+  {\left.\begin{aligned}}
+  {\end{aligned}\right\rbrace}
+
+\title{\LARGE \bf
+Reachable Polyhedral Marching (RPM): An Exact Analysis Tool for Deep-Learned Control Systems}
+
+\author{Joseph A. Vincent$^{1}$ and Mac Schwager$^{1}$% <-this % stops a space
+\thanks{$^{1}$Department of Aeronautics and Astronautics, Stanford University, Stanford, CA 94305, USA, {\texttt\small \{josephav, schwager\}@stanford.edu}}
+\thanks{The first author was supported in part by a Dwight D. Eisenhower Transportation Fellowship. This work was sported in part by ONR grant N00014-23-1-2354. The NASA University Leadership Initiative (grant \#80NSSC20M0163) provided funds to assist the authors with their research, but this article solely reflects the opinions and conclusions of its authors and not any NASA entity. We are grateful for this support.}%
+\thanks{Code: \href{https://github.com/StanfordMSL/Neural-Network-Reach}{\text{https://github.com/StanfordMSL/Neural-Network-Reach}}.}
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{plain}
+% \pagestyle{empty}
+\pagestyle{plain}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract} \label{Abstract}
+Neural networks are increasingly used in robotics as policies, state transition models, state estimation models, or all of the above.
+With these components being learned from data, it is important to be able to analyze what behaviors were learned and how this affects closed-loop performance.
+In this paper we take steps toward this goal by developing methods for computing control invariant sets and regions of attraction (ROAs) of dynamical systems represented as neural networks.
+We focus our attention on feedforward neural networks with the rectified linear unit (ReLU) activation, which are known to implement continuous piecewise-affine (PWA) functions.
+We describe the Reachable Polyhedral Marching (RPM) algorithm for enumerating the affine pieces of a neural network through an incremental connected walk.
+We then use this algorithm to compute exact forward and backward reachable sets, from which we provide methods for computing control invariant sets and ROAs.
+Our approach is unique in that we find these sets incrementally, without Lyapunov-based tools.
+In our examples we demonstrate the ability of our approach to find non-convex control invariant sets and ROAs on tasks with learned van der Pol oscillator and pendulum models.
+Further, we provide an accelerated algorithm for computing ROAs that leverages the incremental and connected enumeration of affine regions that RPM provides.
+We show this acceleration to lead to a 15x speedup in our examples.
+Finally, we apply our methods to find a set of states that are stabilized by an image-based controller for an aircraft runway control problem.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:Introduction}
+\input{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Related Work} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:RelatedWork}
+\input{RelatedWork}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Background and Problem Statement}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:Background}
+\input{Background}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{From ReLU Network to PWA Function}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:PWA}
+\input{ReLUtoPWA}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Reachability} 
+%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:Reachability}
+\input{Reachability}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Control Invariant Sets}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \label{Sec:Invariant}
+% \input{Invariant}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Invariant Sets}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:ROA}
+\input{ROA}
+
+%%%%%%%%%%%%%%%%%%%%
+\section{Examples} 
+%%%%%%%%%%%%%%%%%%%%
+\label{Sec:Examples}
+\input{Examples}
+
+%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}
+%%%%%%%%%%%%%%%%%%%%%
+\label{Sec:Conclusions}
+We proposed the Reachable Polyhedral Marching (RPM) algorithm to incrementally construct an exact PWA representation of a ReLU network. 
+RPM computes an explicit PWA function representation for a given ReLU network that can then be used to quickly find forward and backward reachable sets of ReLU networks. 
+In addition, we demonstrated how, for dynamical systems modeled as ReLU networks, RPM can be leveraged to (i) compute intricate control invariant sets and (ii) certify stability and compute ROAs. 
+RPM enumerates affine regions and reachable sets in an incremental and connected fashion, which we show can lead to massive acceleration when computing ROAs.
+Lastly, RPM also provides a novel way to determine invertibility of ReLU networks.
+
+In future work we are interested in investigating the homeomorphic properties of ReLU networks. 
+There are many studies on the invertibility of neural networks that propose to restrict the network architecture and training such that invertibility is guaranteed with high probability. 
+However, these restrictions might be loosened by further understanding the connection between PWA homeomorphisms and ReLU networks. Another area for future work is to use the insights gained from Theorem \ref{thm: activation_flipping} to develop an inverse RPM method for encoding explicit PWA functions as ReLU networks. 
+Existing work in this direction yields ReLU networks with many more parameters than necessary, not taking full advantage of the dependency of PWA parameters. Also of interest is the potential to use the PWA decomposition given by RPM to assess where in the domain the ReLU network is likely to generalize well and where it is not.
+
+
+
+
+% Another area for future work is to use RPM for global optimization of ReLU network objective functions. Minimization of an objective function represented as a ReLU network results in a nonconvex optimization problem. However, by extracting the explicit PWA function with RPM, the nonconvex optimization can be solved to global optimality via an LP in reach of the affine regions.
+
+
+\section*{Acknowledgements}
+The authors would like to thank Yue Meng for helpful insights and feedback on the RPM algorithm.
+
+% \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section*{Appendix}
+%Appendixes should appear before the acknowledgment.
+
+%\section*{Acknowledgement}
+%To-do.
+
+
+% \newpage
+\bibliographystyle{./IEEEtran} % use IEEEtran.bst style
+\bibliography{./IEEEabrv,./IEEEexample}
+
+%%%%%%%%%%%
+% \newpage
+\appendix 
+%%%%%%%%%%%
+\label{Sec:Appendix}
+\input{Appendix}
+
+\end{document}
