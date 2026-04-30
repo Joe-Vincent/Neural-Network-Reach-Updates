@@ -7,3 +7,20 @@ models/vanderpol/BRSs.jld2
 # vscode files
 .vscode
 
+# python venv (used only to retrain the diffusion model)
+venv/
+__pycache__/
+*.pyc
+
+# diffusion experiment: derived artifacts (regenerable from
+# weights.npz + training_data.npy via diffusion_*.jl scripts)
+models/diffusion/fps_onestep.jld2
+models/diffusion/fps_onestep.png
+models/diffusion/fps_kstep.jld2
+models/diffusion/fps_kstep.png
+models/diffusion/samples_sanity.png
+
+# reach.jl drops debug state here on LP failures; directory must exist
+# (see CLAUDE.md), but the contents are ephemeral
+error_states/*
+!error_states/.gitkeep
