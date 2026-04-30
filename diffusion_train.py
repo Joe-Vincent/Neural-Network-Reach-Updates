@@ -31,15 +31,20 @@ import matplotlib.pyplot as plt
 
 # ---------- Config ----------
 SEED = 0
-N_SAMPLES = 2000
+N_SAMPLES = 8000
 DATA_NOISE = 0.05
 LAYER_SIZES = [3, 16, 16, 16, 16, 16, 2]   # [in_dim, hidden..., out_dim]
 SIGMA_MIN = 0.01
-SIGMA_MAX = 0.5
+# SIGMA_MAX must be large enough that at t=1 the forward-process input
+# x_t = x_0 + SIGMA_MAX * eps is noise-dominated (sigma >> data std). Otherwise
+# reverse-process sampling from N(0, SIGMA_MAX^2 I) feeds the model inputs
+# nothing like its training distribution. Half-moons span ~[-1.5, 1.5] so we
+# pick SIGMA_MAX = 2.0.
+SIGMA_MAX = 2.0
 T_MIN = 0.01
 T_MAX = 1.0
 BATCH_SIZE = 128
-N_EPOCHS = 200
+N_EPOCHS = 500
 LR = 1e-3
 OUT_DIR = "models/diffusion"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

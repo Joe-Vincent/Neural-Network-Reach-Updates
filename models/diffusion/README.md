@@ -58,34 +58,53 @@ results.
 
 ## Findings
 
-Inter-data baseline (median nearest-neighbor distance among training samples):
-**0.012**. This is the spatial scale below which "close to data" is a
-non-trivial claim.
+Inter-data baseline (median nearest-neighbor distance among 8000 training
+samples): **0.0058**. This is the spatial scale below which "close to data" is
+a non-trivial claim.
 
 | Setting                                | Cells | Stable fps | Unstable fps | Stable-fp → data (median) | Stable-fp → data (max) | % stable fps within 0.05 of data | % data within 0.10 of a stable fp |
 |----------------------------------------|------:|-----------:|-------------:|--------------------------:|----------------------:|---------------------------------:|----------------------------------:|
-| One-step at `t = 0.05`                 |  1305 |          5 |            8 |                     0.008 |                 0.018 |                             100% |                             12.8% |
-| 3-step composed `t = [0.5, 0.3, 0.1]`  |  7017 |          3 |            6 |                     0.016 |                 0.019 |                             100% |                              7.5% |
+| One-step at `t = 0.05`                 |  1586 |          5 |            6 |                    0.0037 |                0.0094 |                             100% |                             12.7% |
+| 3-step composed `t = [0.5, 0.3, 0.1]`  |  3457 |          1 |            0 |                    0.2798 |                0.2798 |                               0% |                              0.0% |
 
-**Interpretation.** Every stable fixed point sits within `~1.5×` the inter-data
-nearest-neighbor scale of an actual training sample — i.e., they sit *on* the
-half-moon manifold. The unstable fixed points sit between the two moons and act
-as saddles, separating the basins of the two arms. Composition shrinks the
-fixed-point set (fewer, more concentrated attractors) without breaking the
-manifold-anchoring property.
+**One-step interpretation.** Every stable fixed point sits within `~1.6×` the
+inter-data nearest-neighbor scale of an actual training sample — they sit *on*
+the half-moon manifold. The 6 unstable fixed points sit between the two moons
+and at the moon-arm boundaries, acting as saddles separating the basins of the
+two arms. The manifold-projection hypothesis holds for the one-step denoiser.
 
-The "% data within 0.10 of a stable fp" column is intentionally not 100%: a
-small handful of stable fps cannot cover thousands of data samples evenly.
-This is the expected geometry — what matters is the converse, that no stable
-fp drifts off the manifold.
+**3-step composed interpretation (the surprise).** Cell-wise fixed-point
+analysis collapses to a single attractor at `≈(0, 0)` — the centroid of the
+data, well off the manifold. The 9 fixed points seen in an earlier
+under-trained model were largely artifacts of network roughness; the better-
+trained network is smoother (cells `7017 → 3457`, ~50% fewer linear pieces) and
+its cell-local maps near the data are very close to the identity. With `C ≈ I`
+the linear system `(I − C) x = d` has a near-singular kernel; what solutions do
+exist generically land *outside* their own cell and get filtered (3456 of 3457
+candidates are filtered for this reason). The single surviving fp is the global
+attractor of the high-t composed contraction — at `t = 0.5` the network's
+optimal `E[x_0 | x_t]` for high-noise inputs is the data mean, and three
+compositions pull everything toward it.
+
+This means cell-wise exact fp analysis becomes a *less* sensitive probe of the
+manifold-projection structure as composition makes the map smoother and more
+nearly identity on the data. It does not mean the data manifold isn't
+approximately invariant under the composed map — only that "approximately
+invariant" doesn't show up as cellwise fixed points. Verifying invariance
+directly (iterating `x_{n+1} = f(x_n)` from clean points and checking
+displacement) is on the next-steps list below.
+
+The "% data within 0.10 of a stable fp" column is intentionally not 100% in
+the one-step case: 5 stable fps cannot cover thousands of data samples evenly.
+What matters is the converse — no stable fp drifts off the manifold.
 
 ### Plots
 
 - `fps_onestep.png` — light-grey PWA cell boundaries from the one-step
-  denoiser at `t = 0.05`, blue training points, green stable fixed points,
-  red unstable fixed points (saddles between the moons).
-- `fps_kstep.png` — same overlay for the 3-step composed network. Cell count
-  jumps `1305 → 7017` and the fixed-point count drops `13 → 9`.
+  denoiser at `t = 0.05`, blue training points, green stable fixed points
+  on the moon arms, red unstable fixed points between the moons.
+- `fps_kstep.png` — same overlay for the 3-step composed network. A single
+  green fp at the data centroid; no unstable fps survive the cell filter.
 
 Both plots are gitignored (regenerable). Run `diffusion_replot.jl` to render
 them from the saved `.jld2` without re-running RPM.
@@ -119,8 +138,8 @@ julia> include("diffusion_replot.jl")
 ```
 
 The Julia scripts each take a few seconds to a few minutes; the 3-step
-`compute_reach` is the slowest (cell count blows up to ~7k). Nothing here needs
-MATLAB.
+`compute_reach` is the slowest (cell count is ~3.5k for the current model,
+~30s on this machine). Nothing here needs MATLAB.
 
 ### Files
 
@@ -141,10 +160,16 @@ Gitignored (derived from the above):
   output regresses toward the data mean) and shrinks toward zero as
   `t_low → 0` (denoiser becomes the identity). The "elbow" of that curve is the
   effective analysis time.
-- **Iterated dynamics check.** Verify experimentally that
-  `x_{n+1} = f(x_n)` from random starts inside the box converges to the stable
-  fps (and only to them). Confirms the eigenvalue-based stability classification
-  matches actual basin behavior.
+- **Iterated dynamics check** (priority: high after the composed-case
+  surprise). Two questions to answer empirically: (1) from random starts
+  inside the box, does `x_{n+1} = f(x_n)` for the one-step network converge to
+  the 5 stable cell-wise fps and only to them? Confirms the eigenvalue-based
+  stability classification matches actual basin behavior. (2) For the composed
+  3-step network, does iteration from clean data points stay near the data?
+  If yes, the data manifold is approximately invariant even though no cell-wise
+  fp lies on it — meaning cell-wise fp analysis underestimates manifold
+  invariance for smooth composed maps. If no, the composed map really does
+  pull data toward the centroid, and the high-t step is too aggressive.
 - **Predict-noise vs predict-`x_0` side-by-side.** Train the same architecture
   with predict-noise, wrap as `g(x) = x − σ(t) ε̂(x, t)` (an output-side affine),
   feed *that* to RPM. Same fixed-point set if the parameterizations are
