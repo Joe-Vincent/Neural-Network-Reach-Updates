@@ -24,3 +24,6 @@ models/diffusion/samples_sanity.png
 # (see CLAUDE.md), but the contents are ephemeral
 error_states/*
 !error_states/.gitkeep
+
+# round-trip cell exports (regenerable via export_pwa.jl)
+exports/
